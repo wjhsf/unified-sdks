@@ -1,0 +1,30 @@
+/* eslint-disable */
+import {
+  fetch,
+  BaseUriParameters,
+  Config,
+  MethodOptions,
+  MethodOptionsWithBody,
+  parseRequestBody,
+  TemplateURL
+} from "../../static";
+
+import type * as PathParameters from "./pathParameters";
+import type * as QueryParameters from "./queryParameters";
+import type * as Types from "./types";
+export { PathParameters, QueryParameters, Types};
+
+export type {{{name.upperCamelCase}}}Parameters =
+  & BaseUriParameters
+  & PathParameters.AllPathParameters
+  & QueryParameters.AllQueryParameters;
+
+const USER_AGENT = "{{{parent.metadata.package.name}}}@{{{parent.metadata.package.version}}};";
+
+export class {{{name.upperCamelCase}}}<ConfigParameters extends {{{name.upperCamelCase}}}Parameters> {
+  static readonly defaultBaseUri = "{{{getBaseUriFromDocument model}}}";
+
+  constructor(public config: Config<ConfigParameters>) {}
+
+  {{> operationsPartial}}
+}

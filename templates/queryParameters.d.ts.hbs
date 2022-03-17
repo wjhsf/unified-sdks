@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2022, salesforce.com, inc.
+ * All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause
+ * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/BSD-3-Clause
+ */
+{{!-- TODO: Figure out a clean way to handle when an operation has no query parameters --}}
+/* eslint-disable @typescript-eslint/ban-types */ // Some generated types have no properties
+{{!-- TODO: Move this to .eslintrc because it's just for Shopper Login --}}
+/* eslint-disable camelcase */
+/**
+ * All query parameters that are used by at least one {{{name.upperCamelCase}}} method.
+ */
+export type AllQueryParameters = {
+{{#each (getQueryParameterTypeMapFromEndpoints model.encodes.endPoints)}}
+  {{{@key}}}?:
+  {{~#if (eq this "any")~}}
+  {{!-- `any` is more permissive than necessary; ideally this would be handled by RAML Toolkit --}}
+  string | number | boolean
+  {{~else~}}
+  {{{this}}}
+  {{~/if~}}
+  ;
+{{/each}}
+}
+
+{{#each model.encodes.endPoints}}{{#each operations}}
+export type {{capitalize (getValue name)}} = {
+{{#each request.queryParameters}}
+  {{{name}}}{{#if (not (is required "true"))}}?{{/if}}:
+  {{~#if (eq (getTypeFromParameter this) "any")~}}
+  {{!-- `any` is more permissive than necessary; ideally this would be handled by RAML Toolkit --}}
+  string | number | boolean
+  {{~else~}}
+  {{{getTypeFromParameter this}}}
+  {{~/if~}}
+  ;
+{{/each}}
+};
+{{/each}}{{/each}}

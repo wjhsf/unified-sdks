@@ -1,0 +1,16 @@
+/**
+ * All path parameters that are used by at least one {{{name.upperCamelCase}}} method.
+ */
+export type AllPathParameters = {
+{{#each (getPathParameterTypeMapFromEndpoints model.encodes.endPoints)}}
+  {{{@key}}}?: {{{this}}};
+{{/each}}
+}
+
+{{#each model.encodes.endPoints}}{{#each operations}}
+export type {{capitalize (getValue name)}} = {
+{{#each ../parameters}}
+  {{{name}}}: {{{getTypeFromParameter this}}};
+{{/each}}
+};
+{{/each}}{{/each}}

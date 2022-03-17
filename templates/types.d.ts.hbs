@@ -1,0 +1,26 @@
+/* eslint-disable */
+import {JsonObject, JsonValue} from "../../static";
+{{#each dataTypes}}
+  {{!-- TODO: Remove this special case handling once namespaced types are added --}}
+  {{#if (eq (getValue name) "ResourceBadRequest")}}
+// This is a known deviation from the RAML definition, required due to limitations in
+// the SDK generation. The full definition will be included in the next major release.
+export type ResourceBadRequest = JsonObject;
+  {{else if (or (isTypeDefinition this) (isArrayType this))}}
+export type {{getValue name}} = {{> typePartial this}};
+  {{/if}}
+  {{!-- There exists both a type `RangeFilter` and a trait `RangeFilter` in
+  some APIs. This causes a name collision bug where the type is not included
+  in the generated file. The bug was incorrectly "fixed" by including traits
+  as types. They are not types, and will eventually be removed. --}}
+  {{#if (isTraitDefinition this)}}
+    {{#if (isAllowedTrait this)}}
+    {{!-- Because we know that a trait "type" is replacing a real type whose
+    definition we have lost, we don't want to be restrictive. --}}
+type {{getValue name}} = JsonObject;
+    {{else}}
+      {{log "Cannot convert invalid trait to type:" (getValue name) level="warn"}}
+    {{/if}}
+  {{/if}}
+{{/each}}
+

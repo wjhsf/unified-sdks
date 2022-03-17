@@ -11,20 +11,31 @@ import {copySync} from 'fs-extra';
 
 import {registerHelpers, registerPartials, setupApis} from './utils';
 
-const API_DIRECTORY = process.env.COMMERCE_SDK_INPUT_DIR
-  ? path.resolve(process.env.COMMERCE_SDK_INPUT_DIR)
-  : path.join(__dirname, '../apis');
-const OUTPUT_DIRECTORY = path.join(__dirname, '../src/lib');
-const STATIC_DIRECTORY = path.join(__dirname, '../src/static');
+const WHICH_SDK = process.argv[2];
+if (!WHICH_SDK) throw new Error('Please specify an SDK.');
+
+const PROJECT_ROOT = path.resolve(__dirname, '..');
+const API_DIRECTORY = path.join(PROJECT_ROOT, 'apis');
+const COMMON_STATIC_DIRECTORY = path.join(PROJECT_ROOT, 'src', 'static');
+const SDK_STATIC_DIRECTORY = path.join(PROJECT_ROOT, 'src', WHICH_SDK);
+const OUTPUT_DIRECTORY = path.join(PROJECT_ROOT, `dist-${WHICH_SDK}`);
+const STATIC_OUTPUT = path.join(OUTPUT_DIRECTORY, 'static');
 
 registerHelpers();
 registerPartials();
 
-console.log(`Creating SDK for ${API_DIRECTORY}`);
+console.log(`Creating ${WHICH_SDK} SDK for ${API_DIRECTORY}`);
 
 const skipTestFiles = (src: string): boolean => !/\.test\.[a-z]+$/.test(src);
-copySync(STATIC_DIRECTORY, OUTPUT_DIRECTORY, {filter: skipTestFiles});
+copySync(COMMON_STATIC_DIRECTORY, STATIC_OUTPUT, {
+  filter: skipTestFiles,
+});
+copySync(SDK_STATIC_DIRECTORY, STATIC_OUTPUT, {
+  filter: skipTestFiles,
+});
 
 setupApis(API_DIRECTORY, OUTPUT_DIRECTORY)
-  .then(apis => apis.render())
+  .then(async apis => {
+    await apis.render();
+  })
   .catch(console.error);

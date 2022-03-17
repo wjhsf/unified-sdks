@@ -1,0 +1,22 @@
+{{#if (isArrayType this)}}
+{{{getDataType this}}}
+{{else}}
+{
+{{#each (getProperties this)}}
+  {{{getValue name}}}{{#if (isOptionalProperty this)}}?{{/if}}:
+  {{~#if (eq (getTypeFromProperty this) "object")~}}
+  {{> typePartial range}}
+  {{~else~}}
+  {{!-- This should ideally be handled by RAML toolkit, but that's for another day... --}}
+  {{~#if (eq (getTypeFromProperty this) "Array<object>")~}}
+  JsonObject[]
+  {{~else~}}
+  {{{getTypeFromProperty this}}}
+  {{~/if~}}
+  {{~/if~}};
+{{/each}}
+{{#if (isAdditionalPropertiesAllowed this)}}
+  [key: string]: JsonValue;
+{{/if}}
+}
+{{~/if~}}

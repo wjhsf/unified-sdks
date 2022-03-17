@@ -1,0 +1,123 @@
+{{#each model.encodes.endPoints}}{{#each operations}}
+{{{name}}}(
+  options: MethodOptions{{#if (isRequestWithPayload request)}}WithBody{{/if}}<
+    PathParameters.{{capitalize (getValue name)}} & QueryParameters.{{capitalize (getValue name)}},
+    ConfigParameters
+    {{~#if (isRequestWithPayload request)}}, {{!-- Important comma! --}}
+    {{{addNamespace (getPayloadTypeFromRequest request) "Types"}}}
+    {{/if~}}
+  > & {rawResponse?: false}
+): Promise<{{{addNamespace (getReturnTypeFromOperation this) "Types"}}}>;
+
+{{{name}}}(
+  options: MethodOptions{{#if (isRequestWithPayload request)}}WithBody{{/if}}<
+    PathParameters.{{capitalize (getValue name)}} & QueryParameters.{{capitalize (getValue name)}},
+    ConfigParameters
+    {{~#if (isRequestWithPayload request)}}, {{!-- Important comma! --}}
+    {{{addNamespace (getPayloadTypeFromRequest request) "Types"}}}
+    {{/if~}}
+  > & {rawResponse: true}
+): Promise<Response>;
+
+async {{{name}}}(
+  options: MethodOptions{{#if (isRequestWithPayload request)}}WithBody{{/if}}<
+    PathParameters.{{capitalize (getValue name)}} & QueryParameters.{{capitalize (getValue name)}},
+    ConfigParameters
+    {{~#if (isRequestWithPayload request)}}, {{!-- Important comma! --}}
+    {{{addNamespace (getPayloadTypeFromRequest request) "Types"}}}
+    {{/if~}}
+  >
+): Promise<{{{addNamespace (getReturnTypeFromOperation this) "Types"}}} | Response> {
+  const configParams = this.config.parameters ?? ({} as ConfigParameters);
+  const optionParams =
+    options?.parameters ??
+    ({} as NonNullable<NonNullable<typeof options>['parameters']>);
+
+  const pathParams: Required<BaseUriParameters> & Partial<PathParameters.{{capitalize (getValue name)}}> = {
+    shortCode: configParams.shortCode,
+    version: configParams.version ?? 'v1',
+  };
+  {{#each ../parameters}}
+  if (optionParams["{{{name}}}"] !== undefined) {
+    pathParams["{{{name}}}"] = optionParams["{{{name}}}"];
+  } else if (configParams["{{{name}}}"] !== undefined) {
+    pathParams["{{{name}}}"] = configParams["{{{name}}}"];
+  }
+  {{~#if (is required "true")}}
+  else {
+    throw new Error('Missing required path parameter: {{{name}}}');
+  }
+  {{/if}}
+  {{/each}}
+
+  const queryParams: Partial<QueryParameters.{{capitalize (getValue name)}}> = {};
+  {{#each request.queryParameters}}
+  if (optionParams["{{{name}}}"] !== undefined) {
+    queryParams["{{{name}}}"] = optionParams["{{{name}}}"];
+  } else if (configParams["{{{name}}}"] !== undefined) {
+    queryParams["{{{name}}}"] = configParams["{{{name}}}"];
+  }
+  {{~#if (is required "true")}}
+  else {
+    throw new Error('Missing required query parameter: {{{name}}}');
+  }
+  {{/if}}
+  {{/each}}
+
+  const url = new TemplateURL(
+    "{{{../path}}}",
+    options?.baseUri ?? this.config.baseUri ?? {{{@root.name.upperCamelCase}}}.defaultBaseUri,
+    {
+      pathParams,
+      queryParams,
+      origin: options?.proxy ?? this.config.proxy,
+    }
+  );
+
+  const headers: Record<string, string> = {
+    ...this.config.headers,
+    ...options?.headers,
+    {{#if (isRequestWithPayload request)}}
+    "Content-Type": "{{{getMediaTypeFromRequest request}}}"
+    {{/if}}
+  };
+
+  headers['user-agent'] = headers['user-agent']
+    ? `${headers['user-agent']} ${USER_AGENT}`
+    : USER_AGENT;
+
+  const response = await fetch(
+    url.toString(),
+    {
+      ...this.config.requestInit,
+      ...options?.requestInit,
+      headers,
+      {{#if (isRequestWithPayload request)}}
+      body: parseRequestBody(options.body, headers["Content-Type"]),
+      {{/if}}
+      method: "{{{loud method}}}"
+    },
+    {
+      ...this.config,
+      ...options
+    }
+  {{!--
+  TODO: Fix the signatures for operations/fetch so that this type assertion isn't necessary.
+  We know that the return type from fetch will be `Response | JsonObject`, based on the rawResponse
+  flag. That flag can be set in two places, and it gets passed around a bit, so I'm not sure what
+  the best solution will be.
+  Note that the return type of each operation is `{{{getReturnTypeFromOperation this}}}`, so we will
+  always need a type assertion to go from JsonObject to the correct return type, as we do not do any
+  validation of the response body.
+  --}}
+  ) as unknown as Response;
+  {{#if (eq (getReturnTypeFromOperation this) "void")}}
+  {{!-- When return type is `void`, only return if rawResponse flag is set --}}
+  if ((options?.rawResponse ?? this.config.rawResponse) === true) {
+    return response;
+  }
+  {{else}}
+  return response;
+  {{/if}}
+}
+{{/each}}{{/each}}

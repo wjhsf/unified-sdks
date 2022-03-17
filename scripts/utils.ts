@@ -13,8 +13,8 @@ import * as templateHelpers from './templateHelpers';
 
 const PROJECT_ROOT = path.join(__dirname, '..');
 const PACKAGE_JSON = path.join(PROJECT_ROOT, 'package.json');
+const TEMPLATE_DIRECTORY = path.join(PROJECT_ROOT, 'templates');
 
-const TEMPLATE_DIRECTORY = `${__dirname}/../templates`;
 const {registerPartial, loadApiDirectory} = generate;
 type ApiMetadata = generate.ApiMetadata;
 
@@ -36,13 +36,10 @@ export function registerHelpers(): void {
  * Register any customer partials we have in our pipeline
  */
 export function registerPartials(): void {
-  registerPartial(
-    'dtoPartial',
-    path.join(TEMPLATE_DIRECTORY, 'dtoPartial.ts.hbs')
-  );
+  registerPartial('typePartial', path.join(TEMPLATE_DIRECTORY, 'type.hbs'));
   registerPartial(
     'operationsPartial',
-    path.join(TEMPLATE_DIRECTORY, 'operations.ts.hbs')
+    path.join(TEMPLATE_DIRECTORY, 'operations.hbs')
   );
 }
 
@@ -52,16 +49,23 @@ function addTemplates(apis: ApiMetadata, outputBasePath: string): ApiMetadata {
     path.join(outputBasePath, 'index.ts')
   );
 
-  // add version template
-  apis.addTemplate(
-    path.join(TEMPLATE_DIRECTORY, 'version.ts.hbs'),
-    path.join(outputBasePath, 'version.ts')
-  );
-
   apis.children.forEach((api: ApiMetadata) => {
+    const dir = path.join(outputBasePath, 'clients', api.name.lowerCamelCase);
     api.addTemplate(
       path.join(TEMPLATE_DIRECTORY, 'client.ts.hbs'),
-      path.join(outputBasePath, `${api.name.lowerCamelCase}.ts`)
+      path.join(dir, 'index.ts')
+    );
+    api.addTemplate(
+      path.join(TEMPLATE_DIRECTORY, 'pathParameters.d.ts.hbs'),
+      path.join(dir, 'pathParameters.d.ts')
+    );
+    api.addTemplate(
+      path.join(TEMPLATE_DIRECTORY, 'queryParameters.d.ts.hbs'),
+      path.join(dir, 'queryParameters.d.ts')
+    );
+    api.addTemplate(
+      path.join(TEMPLATE_DIRECTORY, 'types.d.ts.hbs'),
+      path.join(dir, 'types.d.ts')
     );
   });
   return apis;
@@ -80,10 +84,7 @@ export async function setupApis(
   outputDir: string
 ): Promise<ApiMetadata> {
   let apis = loadApiDirectory(inputDir);
-  // SDK version is not API metadata, so it is not included in the file, but it
-  // is necessary for generating the SDK (as part of the user agent header).
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-  apis.metadata.sdkVersion = await readJsonSync(PACKAGE_JSON).version;
+  apis.metadata.package = await readJsonSync(PACKAGE_JSON);
   await apis.init();
 
   apis = addTemplates(apis, outputDir);

@@ -36,6 +36,8 @@
     "lint:style": "stylelint ./src/",
     "prepare": "snyk protect",
     "renderTemplates": "ts-node --compiler-options '{\"module\": \"commonjs\", \"target\": \"ES6\" }' ./scripts/generate.ts",
+    "render:isomorphic": "yarn run renderTemplates isomorphic",
+    "render:nodejs": "yarn run renderTemplates nodejs",
     "start": "HTTPS=true react-scripts start",
     "pretest": "yarn run lint && yarn run lint:style && depcheck && yarn run check:size",
     "test": "yarn run check:types && yarn run test:unit && CI=true yarn run test:react",

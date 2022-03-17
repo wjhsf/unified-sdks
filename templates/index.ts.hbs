@@ -1,0 +1,3 @@
+{{#each children}}
+export { {{name.upperCamelCase}} } from './clients/{{name.lowerCamelCase}}';
+{{/each}}
