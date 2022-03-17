@@ -1,1 +1,0 @@
-APIs to return Gift Certificate details.
