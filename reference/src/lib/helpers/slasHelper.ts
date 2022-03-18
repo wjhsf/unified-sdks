@@ -11,7 +11,7 @@ import {
   ShopperLogin,
   TokenRequest,
   TokenResponse,
-} from '../../lib/shopperLogin';
+} from '../shopperLogin';
 
 /**
  * Determine if execution is client or server side
